@@ -25,13 +25,14 @@ function App() {
         throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
-      
-      // 데이터가 배열인지 확인
+      const json = await response.json();
+
+      // 페이지네이션 응답 형식 처리
+      const data = json.data ?? json;
       if (Array.isArray(data)) {
         setNotes(data);
       } else {
-        console.error("서버에서 배열이 아닌 데이터를 받았습니다:", data);
+        console.error("서버에서 배열이 아닌 데이터를 받았습니다:", json);
         setNotes([]);
         setError("서버에서 올바르지 않은 데이터 형식을 받았습니다.");
       }

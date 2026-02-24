@@ -178,15 +178,31 @@ app.post("/notes", checkDbConnection, checkGeminiConfig, async (req, res) => {
   }
 });
 
-// 전체 메모 불러오기
+// 전체 메모 불러오기 (페이지네이션 지원)
 app.get("/notes", checkDbConnection, async (req, res) => {
-  const sql = "SELECT * FROM notes ORDER BY created_at DESC";
-  dbConnection.query(sql, (err, result) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+  const offset = (page - 1) * limit;
+
+  const countSql = "SELECT COUNT(*) AS total FROM notes";
+  dbConnection.query(countSql, (err, countResult) => {
     if (err) {
-      console.error("데이터 조회 중 오류:", err);
+      console.error("데이터 카운트 중 오류:", err);
       return res.status(500).json({ error: "데이터 조회 실패" });
     }
-    res.json(result);
+
+    const total = countResult[0].total;
+    const sql = "SELECT * FROM notes ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    dbConnection.query(sql, [limit, offset], (err, result) => {
+      if (err) {
+        console.error("데이터 조회 중 오류:", err);
+        return res.status(500).json({ error: "데이터 조회 실패" });
+      }
+      res.json({
+        data: result,
+        meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      });
+    });
   });
 });
 
