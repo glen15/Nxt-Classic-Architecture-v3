@@ -139,8 +139,11 @@ app.get("/", (req, res) => {
 app.post("/notes", checkDbConnection, checkGeminiConfig, async (req, res) => {
   const userMessage = req.body.content;
 
-  if (!userMessage?.trim()) {
+  if (!userMessage || typeof userMessage !== "string" || !userMessage.trim()) {
     return res.status(400).json({ error: "내용을 입력해주세요" });
+  }
+  if (userMessage.length > 2000) {
+    return res.status(400).json({ error: "내용은 2000자 이하여야 합니다" });
   }
 
   try {

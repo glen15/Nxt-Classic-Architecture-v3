@@ -153,8 +153,11 @@ app.get("/", (req, res) => {
 app.post("/notes", checkDbConnection, async (req, res) => {
   const { content } = req.body;
 
-  if (!content?.trim()) {
+  if (!content || typeof content !== "string" || !content.trim()) {
     return res.status(400).json({ error: "내용을 입력해주세요" });
+  }
+  if (content.length > 2000) {
+    return res.status(400).json({ error: "내용은 2000자 이하여야 합니다" });
   }
 
   const sql = "INSERT INTO notes (user_note) VALUES (?)";
@@ -227,8 +230,14 @@ app.delete("/notes", checkDbConnection, async (req, res) => {
 app.post("/gemini-notes", checkDbConnection, async (req, res) => {
   const { content, noteId } = req.body;
 
-  if (!content?.trim() || !noteId) {
-    return res.status(400).json({ error: "내용과 노트 ID가 필요합니다" });
+  if (!content || typeof content !== "string" || !content.trim()) {
+    return res.status(400).json({ error: "내용을 입력해주세요" });
+  }
+  if (content.length > 2000) {
+    return res.status(400).json({ error: "내용은 2000자 이하여야 합니다" });
+  }
+  if (!noteId || !Number.isInteger(noteId) || noteId <= 0) {
+    return res.status(400).json({ error: "유효한 노트 ID가 필요합니다" });
   }
 
   if (!process.env.GEMINI_LAMBDA_URL) {
@@ -268,8 +277,14 @@ app.post("/gemini-notes", checkDbConnection, async (req, res) => {
 app.post("/nova-notes", checkDbConnection, async (req, res) => {
   const { content, noteId } = req.body;
 
-  if (!content?.trim() || !noteId) {
-    return res.status(400).json({ error: "내용과 노트 ID가 필요합니다" });
+  if (!content || typeof content !== "string" || !content.trim()) {
+    return res.status(400).json({ error: "내용을 입력해주세요" });
+  }
+  if (content.length > 2000) {
+    return res.status(400).json({ error: "내용은 2000자 이하여야 합니다" });
+  }
+  if (!noteId || !Number.isInteger(noteId) || noteId <= 0) {
+    return res.status(400).json({ error: "유효한 노트 ID가 필요합니다" });
   }
 
   if (!process.env.BEDROCK_LAMBDA_URL) {

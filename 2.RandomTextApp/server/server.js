@@ -196,10 +196,19 @@ app.post("/api/text", checkDbConnection, async (req, res) => {
   try {
     const { text, username } = req.body;
 
-    if (!text || !username) {
+    if (!text || typeof text !== "string" || !text.trim()) {
+      return res.status(400).json({ error: "텍스트는 필수입니다" });
+    }
+    if (text.length > 500) {
+      return res.status(400).json({ error: "텍스트는 500자 이하여야 합니다" });
+    }
+    if (!username || typeof username !== "string" || !username.trim()) {
+      return res.status(400).json({ error: "사용자 이름은 필수입니다" });
+    }
+    if (username.length > 100) {
       return res
         .status(400)
-        .json({ error: "텍스트와 사용자 이름은 필수입니다" });
+        .json({ error: "사용자 이름은 100자 이하여야 합니다" });
     }
 
     const finalText = `${text} ...아마도...`;

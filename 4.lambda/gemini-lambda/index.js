@@ -19,6 +19,14 @@ exports.handler = async (event) => {
         console.error('Invalid request: No content or noteId provided');
         return { statusCode: 400, body: 'No content or noteId provided' };
     }
+
+    if (typeof inputData.content !== 'string' || !inputData.content.trim()) {
+        return { statusCode: 400, body: 'content must be a non-empty string' };
+    }
+
+    if (!Number.isInteger(inputData.noteId) || inputData.noteId <= 0) {
+        return { statusCode: 400, body: 'noteId must be a positive integer' };
+    }
     
     const userMessage = inputData.content;
     const noteId = inputData.noteId;

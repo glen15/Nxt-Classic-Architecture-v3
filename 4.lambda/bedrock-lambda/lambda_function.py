@@ -22,6 +22,12 @@ def lambda_handler(event, context):
         print("Invalid request: No content or noteId provided")
         return {"statusCode": 400, "body": "No content or noteId provided"}
 
+    if not isinstance(input_data["content"], str) or not input_data["content"].strip():
+        return {"statusCode": 400, "body": "content must be a non-empty string"}
+
+    if not isinstance(input_data["noteId"], int) or input_data["noteId"] <= 0:
+        return {"statusCode": 400, "body": "noteId must be a positive integer"}
+
     user_message = input_data["content"]
     note_id = input_data["noteId"]
     print(
