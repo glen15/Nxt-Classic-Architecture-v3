@@ -287,7 +287,7 @@ app.post("/nova-notes", checkDbConnection, async (req, res) => {
 
     // DB에 AI 응답 저장
     const updateSql =
-      "UPDATE notes SET ai_note = ?, ai_type = 'claude' WHERE id = ?";
+      "UPDATE notes SET ai_note = ?, ai_type = 'nova' WHERE id = ?";
     dbConnection.query(updateSql, [aiResponse, noteId], (err, result) => {
       if (err) {
         console.error("AI 응답 저장 중 오류:", err);

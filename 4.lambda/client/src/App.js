@@ -140,7 +140,7 @@ function App() {
     switch (aiType) {
       case "gemini":
         return { icon: "🤖", label: "Gemini 추천 학습:" };
-      case "claude":
+      case "nova":
         return { icon: "🌟", label: "Nova 추천 학습 서비스:" };
       default:
         return { icon: "🤖", label: "Gemini 추천 학습 서비스:" };
