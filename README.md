@@ -1,9 +1,17 @@
-# Nxt-Classic-Architecture-v2
+# Nxt-Classic-Architecture-v3
 
 ## 📚 프로젝트 개요
 
 이 레포지토리는 **3티어 아키텍처(3-Tier Architecture)** 에 대한 이해와 실습을 제공하기 위한 교육용 프로젝트입니다.
 기본적인 웹 서버부터 복잡한 서버리스 아키텍처까지 단계별로 학습할 수 있도록 구성되어 있습니다.
+
+## 🆕 v3 변경사항 (v2 대비)
+
+- **버그 수정**: Nova Lambda 응답 저장 시 `ai_type`이 `'claude'`로 잘못 기록되던 버그 수정
+- **미사용 의존성 제거**: `openai` 패키지 제거 (실제로 사용하지 않음)
+- **ENUM 정리**: `ai_type` 컬럼에서 사용하지 않는 값(`gpt`, `claude`) 제거
+- **입력 검증 강화**: 모든 API 엔드포인트에 타입/길이 검증 추가
+- **페이지네이션**: `GET /notes`에 `?page=&limit=` 쿼리 파라미터 지원, `{data, meta}` 응답 형식
 
 ## 🏗️ 3티어 아키텍처란?
 
@@ -16,7 +24,7 @@
 ## 📁 프로젝트 구조
 
 ```
-Nxt-Classic-Architecture-v2/
+Nxt-Classic-Architecture-v3/
 ├── 1.Tutorial/              # 기초 튜토리얼
 │   ├── 1.SimpleServer/      # 간단한 서버 구현
 │   ├── 2.html/             # 정적 웹페이지
