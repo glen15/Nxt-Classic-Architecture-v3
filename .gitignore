@@ -1,4 +1,6 @@
 
+# Claude Code
+.claude
 
 .DS_Store
 ._.DS_Store
@@ -135,3 +137,21 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Lambda packaging
+*.zip
+!pymysql_layer.zip
