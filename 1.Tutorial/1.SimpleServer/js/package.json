@@ -1,0 +1,14 @@
+{
+  "name": "simple-server",
+  "version": "1.0.0",
+  "description": "TypeScript HTTP 서버 - In-memory Todo API",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "start": "tsx server.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.11.0"
+  }
+}

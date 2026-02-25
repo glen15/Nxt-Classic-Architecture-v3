@@ -1,53 +1,56 @@
 #!/bin/bash
+set -euo pipefail
 
-# 변수 설정
-BUCKET_NAME="AAA-000-s3"
-REGION="us-east-1"
+# S3 버킷에 정적 파일 배포
+# 사용법: ./s3.sh <버킷이름>
 
-# 대상 파일 이름
-INDEX_FILE="index.html"
+if [ $# -eq 0 ]; then
+  echo "사용법: ./s3.sh <S3 버킷이름>"
+  echo "예시:  ./s3.sh my-todo-bucket"
+  exit 1
+fi
 
-# S3 버킷 생성
-echo "S3 bucket 생성 중...\n\n"
-aws s3api create-bucket --bucket $BUCKET_NAME --region $REGION
+BUCKET_NAME=$1
 
-#us-east-1 외에는 --create-bucket-configuration 사용
-# aws s3api create-bucket --bucket $BUCKET_NAME --region $REGION --create-bucket-configuration LocationConstraint=$REGION
+echo "=== S3 정적 호스팅 배포 ==="
+echo "버킷: ${BUCKET_NAME}"
+echo ""
 
-# 정적 웹사이트 호스팅 활성화
-echo "정적 웹사이트 호스팅 활성화 중...\n\n"
-aws s3 website s3://$BUCKET_NAME/ --index-document $INDEX_FILE
+# 1. 버킷 생성 (이미 존재하면 무시)
+echo "[1/4] S3 버킷 생성..."
+aws s3 mb "s3://${BUCKET_NAME}" 2>/dev/null || echo "  버킷이 이미 존재합니다."
 
-# 퍼블릭 액세스 차단 해제
-echo "퍼블릭 액세스 차단 해제 중...\n\n"
-aws s3api delete-public-access-block --bucket $BUCKET_NAME
+# 2. 퍼블릭 액세스 차단 해제
+echo "[2/4] 퍼블릭 액세스 설정..."
+aws s3api put-public-access-block \
+  --bucket "${BUCKET_NAME}" \
+  --public-access-block-configuration \
+  "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 
-# 버킷 정책 설정
-echo "버킷 정책 설정 중...\n\n"
-echo '{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::'$BUCKET_NAME'/*"
-        }
-    ]
-}' > bucket-policy.json
-aws s3api put-bucket-policy --bucket $BUCKET_NAME --policy file://bucket-policy.json
-rm bucket-policy.json
+# 3. 버킷 정책 설정 (퍼블릭 읽기)
+echo "[3/4] 버킷 정책 설정..."
+aws s3api put-bucket-policy \
+  --bucket "${BUCKET_NAME}" \
+  --policy "{
+    \"Version\": \"2012-10-17\",
+    \"Statement\": [{
+      \"Sid\": \"PublicReadGetObject\",
+      \"Effect\": \"Allow\",
+      \"Principal\": \"*\",
+      \"Action\": \"s3:GetObject\",
+      \"Resource\": \"arn:aws:s3:::${BUCKET_NAME}/*\"
+    }]
+  }"
 
-# index.html 파일 업로드
-echo "index.html 파일 업로드 중...\n\n"
-aws s3 cp $INDEX_FILE s3://$BUCKET_NAME/
+# 4. 파일 업로드
+echo "[4/4] 파일 업로드..."
+aws s3 cp index.html "s3://${BUCKET_NAME}/index.html" \
+  --content-type "text/html; charset=utf-8"
 
-# 웹사이트 URL 출력
-echo "배포된 웹사이트 주소 :"
-echo "http://$BUCKET_NAME.s3-website.$REGION.amazonaws.com"
+# 정적 웹 호스팅 활성화
+aws s3 website "s3://${BUCKET_NAME}" \
+  --index-document index.html
 
-# 삭제 명령어
-# echo "To delete the bucket and all its contents, run the following commands:"
-# echo "aws s3 rm s3://$BUCKET_NAME --recursive"
-# echo "aws s3api delete-bucket --bucket $BUCKET_NAME --region $REGION"
+echo ""
+echo "=== 배포 완료 ==="
+echo "URL: http://${BUCKET_NAME}.s3-website-ap-northeast-2.amazonaws.com"

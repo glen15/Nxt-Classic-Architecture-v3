@@ -1,88 +1,265 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWS S3 정적 웹사이트 호스팅 튜토리얼</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1, h2, h3 {
-            color: #333;
-        }
-        pre {
-            background: #333;
-            color: #fff;
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo List</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #111;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .input-group input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: #4a90d9;
+    }
+
+    .input-group button {
+      padding: 12px 20px;
+      background: #4a90d9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .input-group button:hover { background: #3a7bc8; }
+    .input-group button:disabled { background: #aaa; cursor: not-allowed; }
+
+    .error {
+      background: #fef2f2;
+      color: #b91c1c;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .todo-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      transition: box-shadow 0.2s;
+    }
+
+    .todo-item:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .todo-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #4a90d9;
+    }
+
+    .todo-item .title {
+      flex: 1;
+      font-size: 15px;
+      line-height: 1.4;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .todo-item .title.completed {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .todo-item .delete-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .todo-item .delete-btn:hover {
+      color: #e53e3e;
+      background: #fef2f2;
+    }
+
+    .empty {
+      text-align: center;
+      color: #999;
+      padding: 40px 0;
+      font-size: 15px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>AWS S3를 사용하여 정적 웹사이트 호스팅하기</h1>
-        <p>AWS S3를 사용하여 정적 웹사이트를 호스팅하는 방법을 따라해 보세요:</p>
-        
-        <h2>1단계: S3 버킷 생성</h2>
-        <p>
-            AWS 관리 콘솔로 이동하여 S3로 이동합니다. "버킷 만들기"를 클릭하고 새 S3 버킷을 생성하는 지침을 따릅니다. 버킷 이름이 전 세계적으로 고유해야 합니다.
-        </p>
-        
-        <h2>2단계: 정적 웹사이트 호스팅 활성화</h2>
-        <p>
-            버킷을 생성한 후 버킷 이름을 클릭하여 설정을 엽니다. "속성" 탭으로 이동하여 "정적 웹사이트 호스팅"을 활성화합니다. 인덱스 문서로 "index.html"을 지정합니다.
-        </p>
-
-        <h2>3단계: 퍼블릭 차단 해제</h2>
-        <p>
-            "퍼블릭 액세스 차단" 설정이 비활성화되어 있는지 확인하세요. 이 설정은 "권한" 탭에서 찾을 수 있습니다.
-        </p>
-        
-        <h2>4단계: 버킷 정책 업데이트</h2>
-        <p>
-            웹사이트에 대한 공개 액세스를 허용하려면 버킷 정책을 업데이트해야 합니다. "권한" 탭으로 이동하여 "버킷 정책"을 클릭합니다. 다음 정책을 사용하여 공개 읽기 액세스를 허용합니다:
-        </p>
-        <pre>
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::your-bucket-name/*"
-        }
-    ]
-}
-        </pre>
-        <p><code>your-bucket-name</code>을 S3 버킷 이름으로 바꾸세요.</p>
-        
-        <h2>5단계: index.html 파일 업로드</h2>
-        <p>
-            <code>index.html</code> 파일을 S3 버킷의 루트에 업로드합니다. S3 콘솔에서 "업로드" 버튼을 사용하여 업로드할 수 있습니다.
-        </p>
-
-        <h2>6단계: 웹사이트 접근</h2>
-        <p>
-            파일을 업로드하고 설정을 구성한 후에는 "속성" 탭의 "정적 웹사이트 호스팅" 섹션에서 제공된 엔드포인트를 사용하여 정적 웹사이트에 접근할 수 있습니다.
-        </p>
-        
-        <h3>축하합니다!</h3>
-        <p>이제 정적 웹사이트가 라이브 상태가 되었습니다. URL을 다른 사람과 공유하고 호스팅된 콘텐츠를 확인할 수 있습니다.</p>
+  <div class="container">
+    <h1>Todo List</h1>
+    <div class="input-group">
+      <input type="text" id="todoInput" placeholder="할 일을 입력하세요" maxlength="200" />
+      <button id="addBtn">추가</button>
     </div>
+    <div id="error" class="error" style="display:none"></div>
+    <ul id="todoList" class="todo-list"></ul>
+    <p id="empty" class="empty" style="display:none">등록된 할 일이 없습니다.</p>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:8080/api/todos";
+
+    const todoInput = document.getElementById("todoInput");
+    const addBtn = document.getElementById("addBtn");
+    const todoList = document.getElementById("todoList");
+    const errorEl = document.getElementById("error");
+    const emptyEl = document.getElementById("empty");
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = "block";
+      setTimeout(() => { errorEl.style.display = "none"; }, 3000);
+    }
+
+    function renderTodos(todos) {
+      todoList.innerHTML = "";
+      emptyEl.style.display = todos.length === 0 ? "block" : "none";
+
+      todos.forEach(function (todo) {
+        var li = document.createElement("li");
+        li.className = "todo-item";
+
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = todo.completed;
+        checkbox.addEventListener("change", function () { toggleTodo(todo.id, !todo.completed); });
+
+        var title = document.createElement("span");
+        title.className = "title" + (todo.completed ? " completed" : "");
+        title.textContent = todo.title;
+        title.addEventListener("click", function () { toggleTodo(todo.id, !todo.completed); });
+
+        var deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "\u2715";
+        deleteBtn.addEventListener("click", function () { deleteTodo(todo.id); });
+
+        li.appendChild(checkbox);
+        li.appendChild(title);
+        li.appendChild(deleteBtn);
+        todoList.appendChild(li);
+      });
+    }
+
+    function fetchTodos() {
+      fetch(API_URL)
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success) { renderTodos(json.data); }
+          else { showError(json.error || "조회 실패"); }
+        })
+        .catch(function () { showError("서버에 연결할 수 없습니다"); });
+    }
+
+    function addTodo() {
+      var title = todoInput.value.trim();
+      if (!title) return;
+
+      addBtn.disabled = true;
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success) {
+            todoInput.value = "";
+            fetchTodos();
+          } else {
+            showError(json.error || "추가 실패");
+          }
+        })
+        .catch(function () { showError("서버에 연결할 수 없습니다"); })
+        .finally(function () { addBtn.disabled = false; });
+    }
+
+    function toggleTodo(id, completed) {
+      fetch(API_URL + "/" + id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: completed }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success) { fetchTodos(); }
+          else { showError(json.error || "수정 실패"); }
+        })
+        .catch(function () { showError("서버에 연결할 수 없습니다"); });
+    }
+
+    function deleteTodo(id) {
+      fetch(API_URL + "/" + id, { method: "DELETE" })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success) { fetchTodos(); }
+          else { showError(json.error || "삭제 실패"); }
+        })
+        .catch(function () { showError("서버에 연결할 수 없습니다"); });
+    }
+
+    addBtn.addEventListener("click", addTodo);
+    todoInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { addTodo(); }
+    });
+
+    fetchTodos();
+  </script>
 </body>
 </html>
