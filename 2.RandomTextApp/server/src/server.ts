@@ -1,7 +1,9 @@
-require("dotenv").config();
-const express = require("express");
-const mysql = require("mysql2");
-const cors = require("cors");
+import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
+import mysql from "mysql2";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const port = 8000;
@@ -10,8 +12,10 @@ const port = 8000;
 app.use(cors());
 app.use(express.json());
 
+// ─── DB Connection ───────────────────────────────────────────────
+
 // 데이터베이스 연결 상태를 저장할 변수
-let dbConnection = null;
+let dbConnection: mysql.Connection | null = null;
 
 // 데이터베이스 연결 함수
 const connectToDatabase = () => {
@@ -79,14 +83,17 @@ const connectToDatabase = () => {
     });
 
     return connection;
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error("\n=== 데이터베이스 연결 중 예상치 못한 오류 ===");
-    console.error("에러 타입:", error.name);
-    console.error("에러 메시지:", error.message);
+    console.error("에러 타입:", err.name);
+    console.error("에러 메시지:", err.message);
     console.error("=================\n");
     return null;
   }
 };
+
+// ─── Config Status ──────────────────────────────────────────────
 
 // 데이터베이스 설정 상태를 확인하는 함수
 const getDatabaseConfigStatus = () => {
@@ -94,18 +101,14 @@ const getDatabaseConfigStatus = () => {
     DB_HOST: process.env.DB_HOST || "설정되지 않음",
     DB_USER: process.env.DB_USER || "설정되지 않음",
     DB_NAME: process.env.DB_NAME || "설정되지 않음",
-    DB_PASSWORD: process.env.DB_PASSWORD || "설정되지 않음", // 패스워드 노출
+    DB_PASSWORD: process.env.DB_PASSWORD || "설정되지 않음", // 패스워드 노출 (교육용)
   };
 
-  // 각 설정의 상태를 확인
   const isConfigComplete = Object.values(configStatus).every(
     (value) => value !== "설정되지 않음",
   );
 
-  return {
-    configStatus,
-    isConfigComplete,
-  };
+  return { configStatus, isConfigComplete };
 };
 
 // 서버 상태 정보를 콘솔에 출력하는 함수
@@ -119,21 +122,61 @@ const printServerStatus = () => {
   console.log("Host:", configStatus.DB_HOST);
   console.log("User:", configStatus.DB_USER);
   console.log("Database:", configStatus.DB_NAME);
-  console.log("Password:", configStatus.DB_PASSWORD); // 패스워드 노출
+  console.log("Password:", configStatus.DB_PASSWORD); // 패스워드 노출 (교육용)
 
   console.log("\n=== 설정 상태 ===");
-  console.log(`환경변수 설정: ${isConfigComplete ? "완료 ✅" : "미완료 ❌"}`);
+  console.log(`환경변수 설정: ${isConfigComplete ? "완료" : "미완료"}`);
   if (!isConfigComplete) {
     console.log("누락된 설정이 있습니다. .env 파일을 확인해주세요.");
   }
   console.log("=================\n");
 };
 
-// 데이터베이스 연결 시도
+// ─── Middleware ──────────────────────────────────────────────────
+
+// DB 연결 상태 체크 미들웨어
+const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
+  if (!dbConnection) {
+    return res.status(503).json({
+      error: "데이터베이스 연결 실패",
+      message:
+        "현재 데이터베이스 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해주세요.",
+      config: getDatabaseConfigStatus().configStatus,
+    });
+  }
+  next();
+};
+
+// ─── Validation Helpers ─────────────────────────────────────────
+
+export const validateText = (text: unknown): string | null => {
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return "텍스트는 필수입니다";
+  }
+  if (text.length > 500) {
+    return "텍스트는 500자 이하여야 합니다";
+  }
+  return null;
+};
+
+export const validateUsername = (username: unknown): string | null => {
+  if (!username || typeof username !== "string" || !username.trim()) {
+    return "사용자 이름은 필수입니다";
+  }
+  if (username.length > 100) {
+    return "사용자 이름은 100자 이하여야 합니다";
+  }
+  return null;
+};
+
+// ─── 데이터베이스 연결 시도 ─────────────────────────────────────
+
 connectToDatabase();
 
+// ─── Routes ─────────────────────────────────────────────────────
+
 // 기본 경로 - DB 연결 없이도 동작
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   const { configStatus, isConfigComplete } = getDatabaseConfigStatus();
 
   res.json({
@@ -141,36 +184,23 @@ app.get("/", (req, res) => {
     serverStatus: {
       dbConnection: dbConnection ? "연결됨" : "연결되지 않음",
       configStatus: {
-        host: configStatus.DB_HOST, // 실제 값 노출
-        user: configStatus.DB_USER, // 실제 값 노출
-        database: configStatus.DB_NAME, // 실제 값 노출
-        password: configStatus.DB_PASSWORD, // 실제 값 노출
+        host: configStatus.DB_HOST,
+        user: configStatus.DB_USER,
+        database: configStatus.DB_NAME,
+        password: configStatus.DB_PASSWORD, // 패스워드 노출 (교육용)
       },
       isConfigComplete,
     },
   });
 });
 
-// DB 연결 상태 체크 미들웨어
-const checkDbConnection = (req, res, next) => {
-  if (!dbConnection) {
-    return res.status(503).json({
-      error: "데이터베이스 연결 실패",
-      message:
-        "현재 데이터베이스 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해주세요.",
-      config: getDatabaseConfigStatus().configStatus, // 설정 상태도 함께 반환
-    });
-  }
-  next();
-};
-
-// 랜덤 텍스트 조회 API - DB 연결 필요
-app.get("/api/text", checkDbConnection, async (req, res) => {
+// 랜덤 텍스트 조회 API
+app.get("/api/text", checkDbConnection, async (req: Request, res: Response) => {
   console.log(
-    `데이터베이스 연결 상태: ${dbConnection ? "연결됨 ✅" : "연결되지 않음 ❌"}`,
+    `데이터베이스 연결 상태: ${dbConnection ? "연결됨" : "연결되지 않음"}`,
   );
   try {
-    dbConnection.query(
+    dbConnection!.query(
       "SELECT * FROM texts ORDER BY RAND() LIMIT 1",
       (error, results) => {
         if (error) {
@@ -178,11 +208,12 @@ app.get("/api/text", checkDbConnection, async (req, res) => {
           return res.status(500).json({ error: "데이터 조회 실패" });
         }
 
-        if (!results.length) {
+        const rows = results as mysql.RowDataPacket[];
+        if (!rows.length) {
           return res.status(404).json({ message: "저장된 텍스트가 없습니다" });
         }
 
-        res.json({ text: `${results[0].text} by ${results[0].username}` });
+        res.json({ text: `${rows[0].text} by ${rows[0].username}` });
       },
     );
   } catch (error) {
@@ -191,29 +222,24 @@ app.get("/api/text", checkDbConnection, async (req, res) => {
   }
 });
 
-// 새로운 텍스트 저장 API - DB 연결 필요
-app.post("/api/text", checkDbConnection, async (req, res) => {
+// 새로운 텍스트 저장 API
+app.post("/api/text", checkDbConnection, async (req: Request, res: Response) => {
   try {
     const { text, username } = req.body;
 
-    if (!text || typeof text !== "string" || !text.trim()) {
-      return res.status(400).json({ error: "텍스트는 필수입니다" });
+    const textError = validateText(text);
+    if (textError) {
+      return res.status(400).json({ error: textError });
     }
-    if (text.length > 500) {
-      return res.status(400).json({ error: "텍스트는 500자 이하여야 합니다" });
-    }
-    if (!username || typeof username !== "string" || !username.trim()) {
-      return res.status(400).json({ error: "사용자 이름은 필수입니다" });
-    }
-    if (username.length > 100) {
-      return res
-        .status(400)
-        .json({ error: "사용자 이름은 100자 이하여야 합니다" });
+
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+      return res.status(400).json({ error: usernameError });
     }
 
     const finalText = `${text} ...아마도...`;
 
-    dbConnection.query(
+    dbConnection!.query(
       "INSERT INTO texts SET ?",
       { text: finalText, username },
       (error) => {
@@ -230,8 +256,10 @@ app.post("/api/text", checkDbConnection, async (req, res) => {
   }
 });
 
+// ─── Error Handlers ─────────────────────────────────────────────
+
 // 전역 에러 핸들러
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("예상치 못한 에러:", err);
   res.status(500).json({ error: "서버에서 오류가 발생했습니다" });
 });
@@ -252,3 +280,5 @@ process.on("unhandledRejection", (error) => {
   console.error("처리되지 않은 Promise 거부:", error);
   process.exit(1);
 });
+
+export { app };
