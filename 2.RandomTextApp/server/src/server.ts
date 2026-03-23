@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import path from "path";
 import dotenv from "dotenv";
 import { createDB, DB } from "./db";
 
@@ -126,16 +125,6 @@ app.delete("/api/text/:id", checkDB, async (req: Request, res: Response) => {
   }
 });
 
-// ─── Static Files (v1: EC2 풀스택 모드) ─────────────────────────
-
-if (process.env.SERVE_STATIC === "true") {
-  const clientDist = path.join(__dirname, "../../client/dist");
-  app.use(express.static(clientDist));
-  app.get("*", (req: Request, res: Response) => {
-    res.sendFile(path.join(clientDist, "index.html"));
-  });
-}
-
 // ─── Error Handler ──────────────────────────────────────────────
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -150,9 +139,6 @@ const start = async () => {
 
   app.listen(port, () => {
     console.log(`서버가 ${port}번 포트에서 실행 중입니다`);
-    if (process.env.SERVE_STATIC === "true") {
-      console.log("정적 파일 서빙: client/dist 활성화");
-    }
   });
 };
 
