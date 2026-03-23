@@ -1,11 +1,11 @@
-# Nxt-Classic-Architecture-v4
+# Nxt-Classic-Architecture-v3
 
 ## 프로젝트 개요
 
 이 레포지토리는 **3티어 아키텍처(3-Tier Architecture)** 에 대한 이해와 실습을 제공하기 위한 교육용 프로젝트입니다.
 기본적인 웹 서버부터 서버리스 + IaC 아키텍처까지 단계별로 학습할 수 있도록 구성되어 있습니다.
 
-## v4 변경사항 (v3 대비)
+## v3 변경사항 (v2 대비)
 
 - **TypeScript 전면 도입**: 서버 + 클라이언트 모두 TypeScript
 - **Vite + React 전환**: CRA(deprecated) → Vite 기반 빌드
@@ -25,7 +25,7 @@
 ## 프로젝트 구조
 
 ```
-Nxt-Classic-Architecture-v4/
+Nxt-Classic-Architecture-v3/
 ├── README.md
 ├── .gitignore
 ├── e2e/                               # Playwright E2E 테스트
