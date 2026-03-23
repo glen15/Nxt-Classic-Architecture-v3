@@ -105,9 +105,14 @@ app.post("/api/text", checkDB, async (req: Request, res: Response) => {
   }
 });
 
-// 텍스트 삭제
+// 텍스트 삭제 (비밀번호 필요)
 app.delete("/api/text/:id", checkDB, async (req: Request, res: Response) => {
   try {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminPassword && req.body.password !== adminPassword) {
+      return res.status(403).json({ error: "비밀번호가 올바르지 않습니다" });
+    }
+
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ error: "유효하지 않은 ID입니다" });

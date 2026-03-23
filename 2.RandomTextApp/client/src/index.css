@@ -80,6 +80,44 @@ h2 {
   margin-bottom: 15px;
 }
 
+/* 색상 슬라이더 */
+.hue-control {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.hue-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 200px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    hsl(0, 80%, 60%),
+    hsl(60, 80%, 60%),
+    hsl(120, 80%, 60%),
+    hsl(180, 80%, 60%),
+    hsl(240, 80%, 60%),
+    hsl(300, 80%, 60%),
+    hsl(360, 80%, 60%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
 .button-row {
   display: flex;
   gap: 12px;
@@ -181,6 +219,29 @@ button:disabled {
   background: var(--danger-hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 삭제 모달 */
+.delete-modal {
+  max-width: 360px;
+}
+
+.delete-modal p {
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.delete-modal form {
+  gap: 12px;
+}
+
+.delete-modal .button-row {
+  margin-top: 4px;
+}
+
+.delete-modal .danger-button {
+  padding: 10px 20px;
+  font-size: 16px;
 }
 
 /* 목록 모달 */

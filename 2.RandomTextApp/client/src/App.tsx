@@ -20,6 +20,16 @@ function App() {
   const [showList, setShowList] = useState(false);
   const [allTexts, setAllTexts] = useState<TextItem[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [hue, setHue] = useState(() =>
+    Number(localStorage.getItem("theme-hue") || "0"),
+  );
+
+  const handleHueChange = (value: number) => {
+    setHue(value);
+    localStorage.setItem("theme-hue", String(value));
+  };
 
   useEffect(() => {
     fetchRandomText();
@@ -64,22 +74,29 @@ function App() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+  const handleDeleteConfirm = async () => {
+    if (deleteTarget === null) return;
 
     try {
-      const response = await fetch(`${SERVER_URL}/api/text/${id}`, {
+      const response = await fetch(`${SERVER_URL}/api/text/${deleteTarget}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: adminPassword }),
       });
 
       if (!response.ok) {
-        throw new Error(`삭제 실패: ${response.status}`);
+        const data = await response.json();
+        setError(data.error || "삭제에 실패했습니다.");
+        return;
       }
 
-      setAllTexts((prev) => prev.filter((item) => item.id !== id));
+      setAllTexts((prev) => prev.filter((item) => item.id !== deleteTarget));
     } catch (err) {
       console.error("삭제 중 오류:", err);
       setError("삭제에 실패했습니다.");
+    } finally {
+      setDeleteTarget(null);
+      setAdminPassword("");
     }
   };
 
@@ -110,9 +127,20 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className="App" style={{ filter: `hue-rotate(${hue}deg)` }}>
       <div className="container">
         <h1>확신없는 랜덤 명언</h1>
+
+        <div className="hue-control">
+          <input
+            type="range"
+            min="0"
+            max="360"
+            value={hue}
+            onChange={(e) => handleHueChange(Number(e.target.value))}
+            className="hue-slider"
+          />
+        </div>
 
         <div className="quote-section">
           {error ? (
@@ -189,13 +217,55 @@ function App() {
                   </div>
                   <button
                     className="danger-button"
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => setDeleteTarget(item.id)}
                   >
                     삭제
                   </button>
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {deleteTarget !== null && (
+        <div className="modal-overlay" onClick={() => { setDeleteTarget(null); setAdminPassword(""); }}>
+          <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>삭제 확인</h2>
+            </div>
+            <p>삭제하려면 비밀번호를 입력하세요.</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleDeleteConfirm();
+              }}
+            >
+              <input
+                type="password"
+                placeholder="비밀번호"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="text-input"
+                autoFocus
+              />
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="close-button"
+                  onClick={() => { setDeleteTarget(null); setAdminPassword(""); }}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="danger-button"
+                  disabled={!adminPassword}
+                >
+                  삭제
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
