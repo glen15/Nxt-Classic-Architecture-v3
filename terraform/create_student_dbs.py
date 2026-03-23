@@ -1,42 +1,52 @@
 """
 학생별 데이터베이스 및 사용자 일괄 생성 스크립트
 
-생성되는 테이블:
-  - texts  (2.RandomTextApp용)
-  - todos  (3.AiTodoApp + 4.ServerlessTodo 공용)
+사전 조건:
+  pip install pymysql
 
 사용법:
   python3 create_student_dbs.py \
-    --host rds-monday-am.xxxxx.ap-northeast-2.rds.amazonaws.com \
-    --admin-user admin \
-    --admin-password <비밀번호> \
-    --count 55
-
-생성 결과 (예: student 01):
-  DB_HOST = <RDS 엔드포인트>
-  DB_USER = user_01
-  DB_PASSWORD = pw_01
-  DB_NAME = db_01
-
-사전 조건:
-  pip install pymysql
+    --host <RDS 엔드포인트> \
+    --admin-user <마스터 사용자명> \
+    --admin-password <마스터 비밀번호> \
+    --count <학생 수> \
+    --start <시작 번호>
 """
 
 import argparse
 import pymysql
 import sys
 
+# ─── 설정 ────────────────────────────────────────────────────────
+
+# RDS 접속 (CLI 인자로 전달)
+# --host           RDS 엔드포인트 (필수)
+# --admin-user     마스터 사용자명 (필수)
+# --admin-password 마스터 비밀번호 (필수)
+# --port           RDS 포트 (기본: 3306)
+# --count          학생 수 (기본: 55)
+# --start          시작 번호 (기본: 0)
+
+# 학생 계정 네이밍 규칙
+USER_PREFIX = "user"       # user_00, user_01, ...
+DB_PREFIX = "db"           # db_00, db_01, ...
+PW_PREFIX = "pw"           # pw_00, pw_01, ...
+
+# 시드 데이터: texts 테이블 (2.RandomTextApp)
 TEXTS_SEED = [
     ("인생은 짧고, 예술은 길다 ...아마도...", "히포크라테스"),
     ("나는 생각한다, 고로 존재한다 ...아마도...", "데카르트"),
     ("지식이 힘이다 ...아마도...", "프랜시스 베이컨"),
 ]
 
+# 시드 데이터: todos 테이블 (3.AiTodoApp + 4.ServerlessTodo)
 TODOS_SEED = [
     ("EC2 인스턴스 생성하기", "high", "AWS"),
     ("S3 버킷 정책 설정하기", "medium", "AWS"),
     ("RDS 백업 설정 확인하기", "low", "AWS"),
 ]
+
+# ─── 구현 ────────────────────────────────────────────────────────
 
 
 def parse_args():
@@ -52,9 +62,9 @@ def parse_args():
 
 def create_student(cursor, index):
     """학생 한 명분의 DB, 유저, 테이블, 시드 데이터 생성"""
-    user_name = f"user_{index:02d}"
-    db_name = f"db_{index:02d}"
-    user_password = f"pw_{index:02d}"
+    user_name = f"{USER_PREFIX}_{index:02d}"
+    db_name = f"{DB_PREFIX}_{index:02d}"
+    user_password = f"{PW_PREFIX}_{index:02d}"
 
     # DB + 유저 + 권한
     cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`;")
@@ -142,9 +152,9 @@ def main():
     print("\n학생 .env 설정 예시:")
     print(f"  DB_TYPE=mysql")
     print(f"  DB_HOST={args.host}")
-    print(f"  DB_USER=user_01")
-    print(f"  DB_PASSWORD=pw_01")
-    print(f"  DB_NAME=db_01")
+    print(f"  DB_USER={USER_PREFIX}_01")
+    print(f"  DB_PASSWORD={PW_PREFIX}_01")
+    print(f"  DB_NAME={DB_PREFIX}_01")
 
 
 if __name__ == "__main__":
