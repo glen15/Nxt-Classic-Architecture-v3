@@ -1,16 +1,23 @@
 /* index.css */
 :root {
-  --primary-color: #4e54c8;
-  --primary-hover: #3a40a0;
-  --danger-color: #dc3545;
-  --secondary-color: #6c757d;
-  --background-gradient: linear-gradient(135deg, #4e54c8, #8b4ad3, #da4c9f);
+  --primary-color: #e67e22;
+  --primary-hover: #cf6d17;
+  --danger-color: #e74c3c;
+  --danger-hover: #c0392b;
+  --secondary-color: #95a5a6;
+  --background-gradient: linear-gradient(135deg, #e67e22, #f39c12, #f1c40f);
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --card-border: rgba(255, 255, 255, 0.25);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: "Arial", sans-serif;
+  font-family: "Segoe UI", "Arial", sans-serif;
   background: var(--background-gradient);
   min-height: 100vh;
   color: white;
@@ -32,25 +39,26 @@ body {
 h1 {
   font-size: 2.5em;
   margin-bottom: 30px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 
 h2 {
   font-size: 1.5em;
   margin-bottom: 20px;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
+/* 명언 표시 섹션 */
 .quote-section {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
   padding: 30px;
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  margin-bottom: 30px;
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  margin-bottom: 24px;
   text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .quote-text {
@@ -62,7 +70,7 @@ h2 {
 
 .quote-author {
   font-size: 1.2em;
-  opacity: 0.8;
+  opacity: 0.85;
   margin-bottom: 20px;
 }
 
@@ -72,13 +80,21 @@ h2 {
   margin-bottom: 15px;
 }
 
+.button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 입력 섹션 */
 .input-section {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
   padding: 25px;
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .input-section h2 {
@@ -98,7 +114,7 @@ form {
   padding: 12px 15px;
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   font-size: 16px;
   box-sizing: border-box;
   transition: all 0.3s ease;
@@ -108,9 +124,10 @@ form {
 .text-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 10px rgba(78, 84, 200, 0.3);
+  box-shadow: 0 0 10px rgba(230, 126, 34, 0.35);
 }
 
+/* 버튼 공통 */
 button {
   font-size: 16px;
   border-radius: 8px;
@@ -123,7 +140,7 @@ button {
 }
 
 button:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
@@ -151,6 +168,107 @@ button:disabled {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+.danger-button {
+  background: var(--danger-color);
+  color: white;
+  padding: 6px 14px;
+  min-width: auto;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: var(--danger-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 목록 모달 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #d35400, #e67e22, #f39c12);
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: white;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4em;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  min-width: auto;
+  font-size: 14px;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.list-item {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-text {
+  font-style: italic;
+  font-size: 1.05em;
+  line-height: 1.5;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.list-item-author {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.empty-list {
+  text-align: center;
+  opacity: 0.7;
+  padding: 30px 0;
+  font-size: 1.1em;
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
   .App {
@@ -169,6 +287,10 @@ button:disabled {
   .input-section {
     padding: 20px;
   }
+
+  .modal-content {
+    padding: 20px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -182,5 +304,15 @@ button:disabled {
 
   .text-input {
     padding: 10px 12px;
+  }
+
+  .button-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .list-item {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

@@ -256,6 +256,59 @@ app.post("/api/text", checkDbConnection, async (req: Request, res: Response) => 
   }
 });
 
+// 전체 텍스트 목록 조회 API
+app.get("/api/texts", checkDbConnection, async (req: Request, res: Response) => {
+  try {
+    dbConnection!.query(
+      "SELECT id, text, username FROM texts ORDER BY id DESC",
+      (error, results) => {
+        if (error) {
+          console.error("목록 조회 중 오류:", error);
+          return res.status(500).json({ error: "목록 조회 실패" });
+        }
+
+        const rows = results as mysql.RowDataPacket[];
+        res.json({ texts: rows });
+      },
+    );
+  } catch (error) {
+    console.error("서버 오류:", error);
+    res.status(500).json({ error: "서버 오류 발생" });
+  }
+});
+
+// 텍스트 삭제 API
+app.delete("/api/text/:id", checkDbConnection, async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "유효하지 않은 ID입니다" });
+    }
+
+    dbConnection!.query(
+      "DELETE FROM texts WHERE id = ?",
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error("데이터 삭제 중 오류:", error);
+          return res.status(500).json({ error: "데이터 삭제 실패" });
+        }
+
+        const result = results as mysql.ResultSetHeader;
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "해당 텍스트를 찾을 수 없습니다" });
+        }
+
+        res.json({ message: "텍스트가 성공적으로 삭제되었습니다" });
+      },
+    );
+  } catch (error) {
+    console.error("서버 오류:", error);
+    res.status(500).json({ error: "서버 오류 발생" });
+  }
+});
+
 // ─── Error Handlers ─────────────────────────────────────────────
 
 // 전역 에러 핸들러

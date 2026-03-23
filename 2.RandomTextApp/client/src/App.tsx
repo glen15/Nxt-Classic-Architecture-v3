@@ -3,12 +3,21 @@ import "./index.css";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8000";
 
+interface TextItem {
+  id: number;
+  text: string;
+  username: string;
+}
+
 function App() {
   const [text, setText] = useState("");
   const [username, setUsername] = useState("");
   const [displayedText, setDisplayedText] = useState("");
   const [displayedAuthor, setDisplayedAuthor] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showList, setShowList] = useState(false);
+  const [allTexts, setAllTexts] = useState<TextItem[]>([]);
+  const [listLoading, setListLoading] = useState(false);
 
   useEffect(() => {
     fetchRandomText();
@@ -30,6 +39,45 @@ function App() {
     } catch (err) {
       console.error("명언 조회 중 오류:", err);
       setError("서버와 연결할 수 없습니다.");
+    }
+  };
+
+  const fetchAllTexts = async () => {
+    try {
+      setListLoading(true);
+      const response = await fetch(`${SERVER_URL}/api/texts`);
+
+      if (!response.ok) {
+        throw new Error(`서버 오류: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAllTexts(data.texts);
+      setShowList(true);
+    } catch (err) {
+      console.error("목록 조회 중 오류:", err);
+      setError("목록을 불러올 수 없습니다.");
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    try {
+      const response = await fetch(`${SERVER_URL}/api/text/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(`삭제 실패: ${response.status}`);
+      }
+
+      setAllTexts((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error("삭제 중 오류:", err);
+      setError("삭제에 실패했습니다.");
     }
   };
 
@@ -77,9 +125,18 @@ function App() {
               )}
             </>
           )}
-          <button onClick={fetchRandomText} className="secondary-button">
-            다른 명언 보기
-          </button>
+          <div className="button-row">
+            <button onClick={fetchRandomText} className="secondary-button">
+              다른 명언 보기
+            </button>
+            <button
+              onClick={fetchAllTexts}
+              className="secondary-button"
+              disabled={listLoading}
+            >
+              {listLoading ? "로딩 중..." : "전체 목록"}
+            </button>
+          </div>
         </div>
 
         <div className="input-section">
@@ -109,6 +166,37 @@ function App() {
           </form>
         </div>
       </div>
+
+      {showList && (
+        <div className="modal-overlay" onClick={() => setShowList(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>전체 명언 목록</h2>
+              <button className="close-button" onClick={() => setShowList(false)}>
+                닫기
+              </button>
+            </div>
+            {allTexts.length === 0 ? (
+              <p className="empty-list">저장된 명언이 없습니다.</p>
+            ) : (
+              allTexts.map((item) => (
+                <div key={item.id} className="list-item">
+                  <div className="list-item-content">
+                    <div className="list-item-text">{item.text}</div>
+                    <div className="list-item-author">- {item.username}</div>
+                  </div>
+                  <button
+                    className="danger-button"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
