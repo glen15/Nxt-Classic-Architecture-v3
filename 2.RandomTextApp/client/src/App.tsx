@@ -1,7 +1,9 @@
 import { useState, useEffect, FormEvent } from "react";
 import "./index.css";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8000";
+// v1(EC2 풀스택): 빈 문자열 → 같은 서버에서 API 호출
+// v2/v3(S3+EC2): "http://EC2주소:8000"
+const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "";
 
 interface TextItem {
   id: number;

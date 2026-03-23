@@ -1,147 +1,29 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import mysql from "mysql2";
+import path from "path";
 import dotenv from "dotenv";
+import { createDB, DB } from "./db";
 
 dotenv.config();
 
 const app = express();
-const port = 8000;
+const port = Number(process.env.PORT) || 8000;
 
 // 미들웨어 설정
 app.use(cors());
 app.use(express.json());
 
-// ─── DB Connection ───────────────────────────────────────────────
+// ─── DB ─────────────────────────────────────────────────────────
 
-// 데이터베이스 연결 상태를 저장할 변수
-let dbConnection: mysql.Connection | null = null;
-
-// 데이터베이스 연결 함수
-const connectToDatabase = () => {
-  try {
-    // 필수 환경변수 확인
-    const requiredEnvVars = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"];
-    const missingEnvVars = requiredEnvVars.filter(
-      (envVar) => !process.env[envVar],
-    );
-
-    if (missingEnvVars.length > 0) {
-      console.error("\n=== 데이터베이스 설정 오류 ===");
-      console.error("누락된 환경변수:", missingEnvVars.join(", "));
-      console.error("=================\n");
-      return null;
-    }
-
-    // 데이터베이스 연결 설정
-    const connection = mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-    });
-
-    // 연결 시도
-    connection.connect((err) => {
-      if (err) {
-        console.error("\n=== 데이터베이스 연결 오류 ===");
-        console.error("연결 실패 원인:", err.code);
-        switch (err.code) {
-          case "ER_ACCESS_DENIED_ERROR":
-            console.error("사용자 이름 또는 비밀번호가 잘못되었습니다.");
-            console.error("현재 시도한 접속 정보:");
-            console.error("- User:", process.env.DB_USER);
-            console.error("- Host:", process.env.DB_HOST);
-            break;
-          case "ECONNREFUSED":
-            console.error("데이터베이스 서버에 연결할 수 없습니다.");
-            console.error("데이터베이스 서버가 실행 중인지 확인하세요.");
-            console.error("시도한 연결 주소:", process.env.DB_HOST);
-            break;
-          case "ER_BAD_DB_ERROR":
-            console.error("데이터베이스를 찾을 수 없습니다.");
-            console.error("시도한 데이터베이스 이름:", process.env.DB_NAME);
-            break;
-          default:
-            console.error("상세 에러 메시지:", err.message);
-        }
-        console.error("\n=== 환경변수 설정값 ===");
-        console.error("DB_HOST:", process.env.DB_HOST);
-        console.error("DB_USER:", process.env.DB_USER);
-        console.error("DB_NAME:", process.env.DB_NAME);
-        console.error("DB_PASSWORD:", "********");
-        console.error("=================\n");
-        dbConnection = null;
-        return;
-      }
-      console.log("\n=== 데이터베이스 연결 성공 ===");
-      console.log("Host:", process.env.DB_HOST);
-      console.log("Database:", process.env.DB_NAME);
-      console.log("User:", process.env.DB_USER);
-      console.log("=================\n");
-      dbConnection = connection;
-    });
-
-    return connection;
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("\n=== 데이터베이스 연결 중 예상치 못한 오류 ===");
-    console.error("에러 타입:", err.name);
-    console.error("에러 메시지:", err.message);
-    console.error("=================\n");
-    return null;
-  }
-};
-
-// ─── Config Status ──────────────────────────────────────────────
-
-// 데이터베이스 설정 상태를 확인하는 함수
-const getDatabaseConfigStatus = () => {
-  const configStatus = {
-    DB_HOST: process.env.DB_HOST || "설정되지 않음",
-    DB_USER: process.env.DB_USER || "설정되지 않음",
-    DB_NAME: process.env.DB_NAME || "설정되지 않음",
-    DB_PASSWORD: process.env.DB_PASSWORD || "설정되지 않음", // 패스워드 노출 (교육용)
-  };
-
-  const isConfigComplete = Object.values(configStatus).every(
-    (value) => value !== "설정되지 않음",
-  );
-
-  return { configStatus, isConfigComplete };
-};
-
-// 서버 상태 정보를 콘솔에 출력하는 함수
-const printServerStatus = () => {
-  console.log("\n=== 서버 상태 ===");
-  console.log(`포트: ${port}`);
-
-  console.log("\n=== 데이터베이스 설정 정보 ===");
-  const { configStatus, isConfigComplete } = getDatabaseConfigStatus();
-
-  console.log("Host:", configStatus.DB_HOST);
-  console.log("User:", configStatus.DB_USER);
-  console.log("Database:", configStatus.DB_NAME);
-  console.log("Password:", configStatus.DB_PASSWORD); // 패스워드 노출 (교육용)
-
-  console.log("\n=== 설정 상태 ===");
-  console.log(`환경변수 설정: ${isConfigComplete ? "완료" : "미완료"}`);
-  if (!isConfigComplete) {
-    console.log("누락된 설정이 있습니다. .env 파일을 확인해주세요.");
-  }
-  console.log("=================\n");
-};
-
-// ─── Middleware ──────────────────────────────────────────────────
+let db: DB;
 
 // DB 연결 상태 체크 미들웨어
-const checkDbConnection = (req: Request, res: Response, next: NextFunction) => {
-  if (!dbConnection) {
+const checkDB = (req: Request, res: Response, next: NextFunction) => {
+  if (!db?.isConnected()) {
     return res.status(503).json({
       error: "데이터베이스 연결 실패",
       message:
         "현재 데이터베이스 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해주세요.",
-      config: getDatabaseConfigStatus().configStatus,
     });
   }
   next();
@@ -169,161 +51,116 @@ export const validateUsername = (username: unknown): string | null => {
   return null;
 };
 
-// ─── 데이터베이스 연결 시도 ─────────────────────────────────────
-
-connectToDatabase();
-
 // ─── Routes ─────────────────────────────────────────────────────
 
-// 기본 경로 - DB 연결 없이도 동작
+// 기본 경로 - 서버 상태 확인
 app.get("/", (req: Request, res: Response) => {
-  const { configStatus, isConfigComplete } = getDatabaseConfigStatus();
-
   res.json({
     message: "서버 실행 중..",
-    serverStatus: {
-      dbConnection: dbConnection ? "연결됨" : "연결되지 않음",
-      configStatus: {
-        host: configStatus.DB_HOST,
-        user: configStatus.DB_USER,
-        database: configStatus.DB_NAME,
-        password: configStatus.DB_PASSWORD, // 패스워드 노출 (교육용)
-      },
-      isConfigComplete,
-    },
+    dbType: process.env.DB_TYPE || "sqlite",
+    dbConnected: db?.isConnected() ?? false,
   });
 });
 
-// 랜덤 텍스트 조회 API
-app.get("/api/text", checkDbConnection, async (req: Request, res: Response) => {
-  console.log(
-    `데이터베이스 연결 상태: ${dbConnection ? "연결됨" : "연결되지 않음"}`,
-  );
+// 랜덤 텍스트 조회
+app.get("/api/text", checkDB, async (req: Request, res: Response) => {
   try {
-    dbConnection!.query(
-      "SELECT * FROM texts ORDER BY RAND() LIMIT 1",
-      (error, results) => {
-        if (error) {
-          console.error("데이터 조회 중 오류:", error);
-          return res.status(500).json({ error: "데이터 조회 실패" });
-        }
-
-        const rows = results as mysql.RowDataPacket[];
-        if (!rows.length) {
-          return res.status(404).json({ message: "저장된 텍스트가 없습니다" });
-        }
-
-        res.json({ text: `${rows[0].text} by ${rows[0].username}` });
-      },
-    );
+    const row = await db.getRandomText();
+    if (!row) {
+      return res.status(404).json({ message: "저장된 텍스트가 없습니다" });
+    }
+    res.json({ text: `${row.text} by ${row.username}` });
   } catch (error) {
-    console.error("서버 오류:", error);
-    res.status(500).json({ error: "서버 오류 발생" });
+    console.error("데이터 조회 중 오류:", error);
+    res.status(500).json({ error: "데이터 조회 실패" });
   }
 });
 
-// 새로운 텍스트 저장 API
-app.post("/api/text", checkDbConnection, async (req: Request, res: Response) => {
+// 전체 텍스트 목록 조회
+app.get("/api/texts", checkDB, async (req: Request, res: Response) => {
+  try {
+    const rows = await db.getAllTexts();
+    res.json({ texts: rows });
+  } catch (error) {
+    console.error("목록 조회 중 오류:", error);
+    res.status(500).json({ error: "목록 조회 실패" });
+  }
+});
+
+// 새로운 텍스트 저장
+app.post("/api/text", checkDB, async (req: Request, res: Response) => {
   try {
     const { text, username } = req.body;
 
     const textError = validateText(text);
-    if (textError) {
-      return res.status(400).json({ error: textError });
-    }
+    if (textError) return res.status(400).json({ error: textError });
 
     const usernameError = validateUsername(username);
-    if (usernameError) {
-      return res.status(400).json({ error: usernameError });
-    }
+    if (usernameError) return res.status(400).json({ error: usernameError });
 
-    const finalText = `${text} ...아마도...`;
-
-    dbConnection!.query(
-      "INSERT INTO texts SET ?",
-      { text: finalText, username },
-      (error) => {
-        if (error) {
-          console.error("데이터 저장 중 오류:", error);
-          return res.status(500).json({ error: "데이터 저장 실패" });
-        }
-        res.status(201).json({ message: "텍스트가 성공적으로 저장되었습니다" });
-      },
-    );
+    await db.insertText(`${text} ...아마도...`, username);
+    res.status(201).json({ message: "텍스트가 성공적으로 저장되었습니다" });
   } catch (error) {
-    console.error("서버 오류:", error);
-    res.status(500).json({ error: "서버 오류 발생" });
+    console.error("데이터 저장 중 오류:", error);
+    res.status(500).json({ error: "데이터 저장 실패" });
   }
 });
 
-// 전체 텍스트 목록 조회 API
-app.get("/api/texts", checkDbConnection, async (req: Request, res: Response) => {
-  try {
-    dbConnection!.query(
-      "SELECT id, text, username FROM texts ORDER BY id DESC",
-      (error, results) => {
-        if (error) {
-          console.error("목록 조회 중 오류:", error);
-          return res.status(500).json({ error: "목록 조회 실패" });
-        }
-
-        const rows = results as mysql.RowDataPacket[];
-        res.json({ texts: rows });
-      },
-    );
-  } catch (error) {
-    console.error("서버 오류:", error);
-    res.status(500).json({ error: "서버 오류 발생" });
-  }
-});
-
-// 텍스트 삭제 API
-app.delete("/api/text/:id", checkDbConnection, async (req: Request, res: Response) => {
+// 텍스트 삭제
+app.delete("/api/text/:id", checkDB, async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ error: "유효하지 않은 ID입니다" });
     }
 
-    dbConnection!.query(
-      "DELETE FROM texts WHERE id = ?",
-      [id],
-      (error, results) => {
-        if (error) {
-          console.error("데이터 삭제 중 오류:", error);
-          return res.status(500).json({ error: "데이터 삭제 실패" });
-        }
+    const deleted = await db.deleteText(id);
+    if (!deleted) {
+      return res.status(404).json({ error: "해당 텍스트를 찾을 수 없습니다" });
+    }
 
-        const result = results as mysql.ResultSetHeader;
-        if (result.affectedRows === 0) {
-          return res.status(404).json({ error: "해당 텍스트를 찾을 수 없습니다" });
-        }
-
-        res.json({ message: "텍스트가 성공적으로 삭제되었습니다" });
-      },
-    );
+    res.json({ message: "텍스트가 성공적으로 삭제되었습니다" });
   } catch (error) {
-    console.error("서버 오류:", error);
-    res.status(500).json({ error: "서버 오류 발생" });
+    console.error("데이터 삭제 중 오류:", error);
+    res.status(500).json({ error: "데이터 삭제 실패" });
   }
 });
 
-// ─── Error Handlers ─────────────────────────────────────────────
+// ─── Static Files (v1: EC2 풀스택 모드) ─────────────────────────
 
-// 전역 에러 핸들러
+if (process.env.SERVE_STATIC === "true") {
+  const clientDist = path.join(__dirname, "../../client/dist");
+  app.use(express.static(clientDist));
+  app.get("*", (req: Request, res: Response) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
+
+// ─── Error Handler ──────────────────────────────────────────────
+
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("예상치 못한 에러:", err);
   res.status(500).json({ error: "서버에서 오류가 발생했습니다" });
 });
 
-// 서버 시작
-app.listen(port, () => {
-  printServerStatus();
-  console.log(`서버가 ${port}번 포트에서 실행 중입니다`);
+// ─── Start ──────────────────────────────────────────────────────
+
+const start = async () => {
+  db = await createDB();
+
+  app.listen(port, () => {
+    console.log(`서버가 ${port}번 포트에서 실행 중입니다`);
+    if (process.env.SERVE_STATIC === "true") {
+      console.log("정적 파일 서빙: client/dist 활성화");
+    }
+  });
+};
+
+start().catch((error) => {
+  console.error("서버 시작 실패:", error);
+  process.exit(1);
 });
 
-// 예상치 못한 에러 처리
 process.on("uncaughtException", (error) => {
   console.error("처리되지 않은 에러:", error);
   process.exit(1);
