@@ -44,9 +44,4 @@ resource "aws_db_instance" "main" {
   final_snapshot_identifier = "nxt-${var.group_name}-3tier-final"
 
   backup_retention_period = 0
-
-  tags = {
-    Name  = "nxt-${var.group_name}-3tier"
-    Group = var.group_name
-  }
 }
