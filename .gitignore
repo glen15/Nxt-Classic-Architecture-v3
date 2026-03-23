@@ -146,6 +146,9 @@ dist
 !terraform.tfvars.example
 .terraform.lock.hcl
 
+# SQLite
+*.db
+
 # Python
 __pycache__/
 *.py[cod]
