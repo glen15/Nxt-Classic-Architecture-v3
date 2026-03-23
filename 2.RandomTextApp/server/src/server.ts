@@ -6,7 +6,7 @@ import { createDB, DB } from "./db";
 dotenv.config();
 
 const app = express();
-const port = Number(process.env.PORT) || 8080;
+const port = Number(process.env.SERVER_PORT) || 8000;
 
 // 미들웨어 설정
 app.use(cors());
