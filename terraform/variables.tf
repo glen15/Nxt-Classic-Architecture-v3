@@ -26,9 +26,3 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t3.micro"
 }
-
-variable "student_count" {
-  description = "생성할 학생 수"
-  type        = number
-  default     = 55
-}
