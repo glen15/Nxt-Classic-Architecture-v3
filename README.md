@@ -5,15 +5,6 @@
 이 레포지토리는 **3티어 아키텍처(3-Tier Architecture)** 에 대한 이해와 실습을 제공하기 위한 교육용 프로젝트입니다.
 기본적인 웹 서버부터 서버리스 + IaC 아키텍처까지 단계별로 학습할 수 있도록 구성되어 있습니다.
 
-## v3 변경사항 (v2 대비)
-
-- **TypeScript 전면 도입**: 서버 + 클라이언트 모두 TypeScript
-- **Vite + React 전환**: CRA(deprecated) → Vite 기반 빌드
-- **Terraform 추가**: 4단계에 IaC(Infrastructure as Code) 정의
-- **테스트 추가**: Vitest로 검증 함수 단위 테스트, Playwright로 E2E 테스트
-- **Tutorial 재구성**: JS+Python 서버, S3 배포, Streamlit 단일 아키텍처
-- **도메인 유지**: 2단계는 랜덤 명언(CRUD), 3-4단계는 할일(Todo)+AI
-
 ## 3티어 아키텍처란?
 
 3티어 아키텍처는 애플리케이션을 세 개의 논리적 계층으로 분리하는 소프트웨어 아키텍처 패턴입니다:
