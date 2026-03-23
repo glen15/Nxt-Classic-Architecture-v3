@@ -27,7 +27,7 @@ data "aws_subnets" "default" {
 # ─── Security Group ──────────────────────────────────────────────
 
 resource "aws_security_group" "rds" {
-  name        = "rds-${var.group_name}-sg"
+  name        = "nxt-${var.group_name}-3tier-sg"
   description = "Allow MySQL access for ${var.group_name}"
   vpc_id      = data.aws_vpc.default.id
 
@@ -47,7 +47,7 @@ resource "aws_security_group" "rds" {
   }
 
   tags = {
-    Name  = "rds-${var.group_name}-sg"
+    Name  = "nxt-${var.group_name}-3tier-sg"
     Group = var.group_name
   }
 }
@@ -55,11 +55,11 @@ resource "aws_security_group" "rds" {
 # ─── DB Subnet Group ────────────────────────────────────────────
 
 resource "aws_db_subnet_group" "main" {
-  name       = "rds-${var.group_name}-subnet"
+  name       = "nxt-${var.group_name}-3tier-subnet"
   subnet_ids = data.aws_subnets.default.ids
 
   tags = {
-    Name  = "rds-${var.group_name}-subnet"
+    Name  = "nxt-${var.group_name}-3tier-subnet"
     Group = var.group_name
   }
 }
@@ -67,7 +67,7 @@ resource "aws_db_subnet_group" "main" {
 # ─── RDS Instance ───────────────────────────────────────────────
 
 resource "aws_db_instance" "main" {
-  identifier = "rds-${var.group_name}"
+  identifier = "nxt-${var.group_name}-3tier"
 
   engine         = "mysql"
   engine_version = "8.0"
@@ -85,12 +85,12 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = true
 
   skip_final_snapshot       = true
-  final_snapshot_identifier = "rds-${var.group_name}-final"
+  final_snapshot_identifier = "nxt-${var.group_name}-3tier-final"
 
   backup_retention_period = 0
 
   tags = {
-    Name  = "rds-${var.group_name}"
+    Name  = "nxt-${var.group_name}-3tier"
     Group = var.group_name
   }
 }
