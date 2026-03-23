@@ -11,57 +11,15 @@ provider "aws" {
   region = var.aws_region
 }
 
-# ─── Default VPC ─────────────────────────────────────────────────
+# ─── Default VPC + Security Group ────────────────────────────────
 
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-# ─── Security Group ──────────────────────────────────────────────
-
-resource "aws_security_group" "rds" {
-  name        = "nxt-${var.group_name}-3tier-sg"
-  description = "Allow MySQL access for ${var.group_name}"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    description = "MySQL from anywhere (education)"
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name  = "nxt-${var.group_name}-3tier-sg"
-    Group = var.group_name
-  }
-}
-
-# ─── DB Subnet Group ────────────────────────────────────────────
-
-resource "aws_db_subnet_group" "main" {
-  name       = "nxt-${var.group_name}-3tier-subnet"
-  subnet_ids = data.aws_subnets.default.ids
-
-  tags = {
-    Name  = "nxt-${var.group_name}-3tier-subnet"
-    Group = var.group_name
-  }
+data "aws_security_group" "default" {
+  vpc_id = data.aws_vpc.default.id
+  name   = "default"
 }
 
 # ─── RDS Instance ───────────────────────────────────────────────
@@ -80,8 +38,7 @@ resource "aws_db_instance" "main" {
   username = var.db_master_username
   password = var.db_master_password
 
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
+  vpc_security_group_ids = [data.aws_security_group.default.id]
   publicly_accessible    = true
 
   skip_final_snapshot       = true
