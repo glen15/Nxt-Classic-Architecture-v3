@@ -1,0 +1,5 @@
+# cp terraform.tfvars.example terraform.tfvars 후 값을 수정하세요
+group_name         = "monday-am"
+db_master_username = "admin"
+db_master_password = "<마스터_비밀번호_입력>"
+student_count      = 55
